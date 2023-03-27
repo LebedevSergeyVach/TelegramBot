@@ -1,0 +1,25 @@
+name: Main
+
+on: [push, pull_request]
+
+jobs:
+  Linting:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install Poetry
+      run: curl -sSL https://install.python-poetry.org | python3 -
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: PyLint
+      run: poetry run pylint -j$(nproc) $(git ls-files '*.py')
