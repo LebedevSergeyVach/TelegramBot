@@ -109,10 +109,10 @@ def get_game():
         Returns text, link and photo (img) of a random game from the best """
     url = 'https://stopgame.ru/games/pc/best?p='
 
-    html = BS(get(f'{url}{randint(1, 15)}').content, 'html.parser')
+    html = BS(get(f'{url}{randint(1, 15)}', timeout=5).content, 'html.parser')
     game = choice(html.find_all(class_='_card_13hsk_1'))
     game_url = f'https://stopgame.ru/{game["href"]}'
-    html_ = BS(get(game_url).content, 'html.parser')
+    html_ = BS(get(game_url, timeout=5).content,  'html.parser')
 
     game_text = html_.find(class_='_title_qrsvr_270').text
     game_img = html_.find('img', class_='_image_sh7r2_31')['src']
