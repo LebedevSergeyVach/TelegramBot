@@ -104,28 +104,49 @@ def get_film():
     return film_text, film_img, film_url
 
 
+def get_game():
+    """ Возвращает текст, ссылку и фото (img) случайной игры из лучших
+        Returns text, link and photo (img) of a random game from the best """
+    url = 'https://stopgame.ru/games/pc/best?p='
+
+    html = BS(get(f'{url}{randint(1, 15)}').content, 'html.parser')
+    game = choice(html.find_all(class_='_card_13hsk_1'))
+    game_url = f'https://stopgame.ru/{game["href"]}'
+    html_ = BS(get(game_url).content, 'html.parser')
+
+    game_text = html_.find(class_='_title_qrsvr_270').text
+    game_img = html_.find('img', class_='_image_sh7r2_31')['src']
+
+    return game_text, game_url, game_img
+
+
 @dp.message_handler(commands=['start'])
 async def send_welcome(message):
     """ Команда 'старт'
         The 'start' command """
-    welcome_text = 'Добрый день! :)\nВот что я умею:\n' \
-                   '/start - Добрый день! Начать работу\n' \
-                   '/fact -Показать рандомный факт\n' \
-                   '/event - Показать интересный фестиваль\n' \
-                   '/cat - Показать случайную фоточку с котиком\n' \
-                   '/joke - Показать случайный анекдот\n' \
-                   '/currencies - Котировка курса валюты\n' \
-                   'или можете просто нажимать на кнопки для удобства ;)'
+    welcome_text = \
+        'Добрый день! :)\nВот что я умею:\n' \
+        '/start - Добрый день! Начать работу\n' \
+        '/game - Показать случайную игру из лучших\n' \
+        '/film - Показать случайный фильм\n' \
+        '/cat - Показать случайную фоточку с котиком\n' \
+        '/fact -Показать рандомный факт\n' \
+        '/event - Показать интересный фестиваль\n' \
+        '/joke - Показать случайный анекдот\n' \
+        '/currencies - Котировка курса валюты\n' \
+        'или можете просто нажимать на кнопки для удобства ;)'
 
-    keyboard = types.ReplyKeyboardMarkup(row_width=3, resize_keyboard=True, one_time_keyboard=False)
+    keyboard = types.ReplyKeyboardMarkup(row_width=4, resize_keyboard=True, one_time_keyboard=False)
 
     buttons = [
-              types.KeyboardButton('Факты'),
-              types.KeyboardButton('Событие'),
-              types.KeyboardButton('Анекдоты'),
-              types.KeyboardButton('Котики'),
-              types.KeyboardButton('Валюты'),
-              types.KeyboardButton('Фильмы')
+        types.KeyboardButton('Игры'),
+        types.KeyboardButton('Фильмы'),
+        types.KeyboardButton('Котики'),
+        types.KeyboardButton('Факты'),
+        types.KeyboardButton('Событие'),
+        types.KeyboardButton('Анекдоты'),
+        types.KeyboardButton('Валюты')
+
     ]
     keyboard.add(*buttons)
 
@@ -236,7 +257,7 @@ async def send_random_values(call: types.CallbackQuery):
 
 @dp.message_handler(commands=['film'])
 @dp.message_handler(Text(equals='Фильмы'))
-async def send_cat(message: types.message):
+async def send_film(message: types.message):
     """ Команда случайного фильма функции get_film()
         Random Movie command functions get_film() """
     title, img_src, url = get_film()
@@ -252,7 +273,27 @@ async def send_cat(message: types.message):
         reply_markup=keyboard
     )
 
-    print(f'{today(), message.from_user.username, message.from_user.id}: {title} - Фильмы\n')
+    print(f'{today(), message.from_user.username, message.from_user.id}: {title}; {url} - Фильмы\n')
+
+
+@dp.message_handler(commands=['game'])
+@dp.message_handler(Text(equals='Игры'))
+async def send_game(message: types.message):
+    """ Команда случайной игры ил лучших функции get_game()
+        Random game command or the best get_game() functions """
+    text, url, img = get_game()
+    keyboard = types.InlineKeyboardMarkup(row_width=1)
+    buttons = types.InlineKeyboardButton(text="Ссылочка)", url=url)
+    keyboard.add(buttons)
+
+    await bot.send_photo(
+        message.chat.id,
+        photo=img,
+        caption=text,
+        reply_markup=keyboard
+    )
+
+    print(f'{today(), message.from_user.username, message.from_user.id}; {text}; {url} - Игры\n')
 
 
 @dp.message_handler(commands=['cat'])
@@ -333,7 +374,7 @@ async def get_photo(message: types.Message):
         )
 
         print(
-            f'{today(), message.from_user.username, message.from_user.id}: {message.text} {error}'
+            f'{today(), message.from_user.username, message.from_user.id}: {message.text} {error}\n'
         )
 
     elif '/' in message.text:
