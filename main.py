@@ -1,4 +1,6 @@
-""" ТЕЛЕГРАММ БОТ """
+""" Телеграм Бот """
+# pylint: disable=C0103
+
 
 from random import choice, randint
 from datetime import datetime
@@ -107,7 +109,7 @@ def get_film():
 def get_game():
     """ Возвращает текст, ссылку и фото (img) случайной игры из лучших
         Returns text, link and photo (img) of a random game from the best """
-    url = 'https://stopgame.ru/games/pc/best?p='
+    url = 'https://stopgame.ru/games/pc/best?year_start=2000&p='
 
     html = BS(get(f'{url}{randint(1, 15)}', timeout=5).content, 'html.parser')
     game = choice(html.find_all(class_='_card_13hsk_1'))
@@ -115,9 +117,10 @@ def get_game():
     html_ = BS(get(game_url, timeout=5).content,  'html.parser')
 
     game_text = html_.find(class_='_title_qrsvr_270').text
+    game_text_info = html_.find(class_='_info-container__top_sh7r2_1').text
     game_img = html_.find('img', class_='_image_sh7r2_31')['src']
 
-    return game_text, game_url, game_img
+    return game_text, game_text_info, game_url, game_img
 
 
 @dp.message_handler(commands=['start'])
@@ -134,7 +137,8 @@ async def send_welcome(message):
         '/event - Показать интересный фестиваль\n' \
         '/joke - Показать случайный анекдот\n' \
         '/currencies - Котировка курса валюты\n' \
-        'или можете просто нажимать на кнопки для удобства ;)'
+        '/donat - донат автору бота ;)\n' \
+        'или можете просто нажимать\nна кнопки для удобства ;)'
 
     keyboard = types.ReplyKeyboardMarkup(row_width=4, resize_keyboard=True, one_time_keyboard=False)
 
@@ -158,7 +162,6 @@ async def send_welcome(message):
 
 
 @dp.message_handler(commands=['fact'])
-@dp.message_handler(commands='inline_url')
 @dp.message_handler(Text(equals='Факты'))
 async def send_fact(message: types.message):
     """ Команда случайного факта функции get_random_fact()
@@ -184,7 +187,6 @@ async def send_fact(message: types.message):
 
 
 @dp.message_handler(commands=['event'])
-@dp.message_handler(commands='inline_url')
 @dp.message_handler(Text(equals='Событие'))
 async def send_festival(message: types.message):
     """ Команда случайного события функции get_random_event()
@@ -279,9 +281,9 @@ async def send_film(message: types.message):
 @dp.message_handler(commands=['game'])
 @dp.message_handler(Text(equals='Игры'))
 async def send_game(message: types.message):
-    """ Команда случайной игры ил лучших функции get_game()
+    """ Команда случайной игры из лучших функции get_game()
         Random game command or the best get_game() functions """
-    text, url, img = get_game()
+    text, text_info, url, img = get_game()
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     buttons = types.InlineKeyboardButton(text="Ссылочка)", url=url)
     keyboard.add(buttons)
@@ -289,7 +291,7 @@ async def send_game(message: types.message):
     await bot.send_photo(
         message.chat.id,
         photo=img,
-        caption=text,
+        caption=text + text_info,
         reply_markup=keyboard
     )
 
@@ -349,7 +351,20 @@ async def get_photo(message: types.Message):
         команда показа создателей бота
         The command to output an error with an incorrect command from the user,
         the command to show the creators of the bot """
-    if '/создатели' in message.text:
+    if 'на хуй' in message.text:
+        url = 'https://yandex.ru/images/search?lr=65&source=serp&stype=image&text=иди%20нахуй%20)'
+        html = BS(get(url, timeout=5).content,  'html.parser')
+        error = choice(html.find_all(class_='serp-item__link'))
+        errors = f"https:{error.find('img')['src']}"
+
+        await bot.send_photo(
+            message.chat.id,
+            photo=errors
+        )
+
+        print(f'{today(), message.from_user.username, message.from_user.id}\n{errors} - ошибка\n')
+
+    elif '/создатели' in message.text:
         error = 'разраб: криворукий гей\nнаставник: ахуенный гей'
 
         await message.reply(
@@ -364,17 +379,6 @@ async def get_photo(message: types.Message):
         print(
             f'{today(), message.from_user.username, message.from_user.id}: {message.text}'
             f' - создатели\n'
-        )
-
-    elif '/da' in message.text:
-        error = 'pizda'
-
-        await message.reply(
-            error
-        )
-
-        print(
-            f'{today(), message.from_user.username, message.from_user.id}: {message.text} {error}\n'
         )
 
     elif '/' in message.text:
