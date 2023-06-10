@@ -351,7 +351,7 @@ async def get_photo(message: types.Message):
         команда показа создателей бота
         The command to output an error with an incorrect command from the user,
         the command to show the creators of the bot """
-    if 'на хуй' in message.text:
+    if 'на хуй' in message.text or 'нахуй' in message.text:
         url = 'https://yandex.ru/images/search?lr=65&source=serp&stype=image&text=иди%20нахуй%20)'
         html = BS(get(url, timeout=5).content,  'html.parser')
         error = choice(html.find_all(class_='serp-item__link'))
